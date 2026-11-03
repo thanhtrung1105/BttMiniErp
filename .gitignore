@@ -1,0 +1,29 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Local .NET CLI state and tools
+.dotnet/
+
+# IDE and user settings
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test output
+TestResults/
+coverage/
+
+# Secrets and local configuration
+secrets.json
+appsettings.Local.json
+appsettings.*.local.json
+
+# Local certificates and database backups
+*.pfx
+*.p12
+*.bak
+*.trn

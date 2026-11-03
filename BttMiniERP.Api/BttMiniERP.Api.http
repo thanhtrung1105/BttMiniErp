@@ -1,0 +1,11 @@
+@BttMiniERP.Api_HostAddress = https://localhost:7227
+
+GET {{BttMiniERP.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{BttMiniERP.Api_HostAddress}}/openapi/v1.json
+Accept: application/json
+
+###

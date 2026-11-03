@@ -1,0 +1,27 @@
+name: Kiểm tra backend
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Lấy mã nguồn
+        uses: actions/checkout@v4
+      - name: Cài .NET SDK 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Khôi phục gói
+        run: dotnet restore BttMiniERP.sln
+      - name: Biên dịch
+        run: dotnet build BttMiniERP.sln --configuration Release --no-restore
+      - name: Kiểm thử HTTP không dùng SQL Server
+        run: dotnet test BttMiniERP.sln --configuration Release --no-build --no-restore
