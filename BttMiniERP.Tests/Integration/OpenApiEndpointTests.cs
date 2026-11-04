@@ -1,11 +1,11 @@
 using System.Net;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
+using BttMiniERP.Tests.Fixtures;
 
 namespace BttMiniERP.Tests.Integration;
 
-public sealed class OpenApiEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class OpenApiEndpointTests(ApiFactory factory)
+    : IClassFixture<ApiFactory>
 {
     [Fact]
     public async Task GetOpenApi_ReturnsDocumentWithHealthEndpoint()

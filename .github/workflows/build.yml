@@ -24,4 +24,4 @@ jobs:
       - name: Biên dịch
         run: dotnet build BttMiniERP.sln --configuration Release --no-restore
       - name: Kiểm thử HTTP không dùng SQL Server
-        run: dotnet test BttMiniERP.sln --configuration Release --no-build --no-restore
+        run: dotnet test BttMiniERP.sln --configuration Release --no-build --no-restore --filter "Category!=SqlServer"
