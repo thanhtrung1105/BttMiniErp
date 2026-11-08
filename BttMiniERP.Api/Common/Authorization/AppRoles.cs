@@ -4,6 +4,8 @@ public static class AppRoles
 {
     public const string Admin = "Admin";
     public const string ManageUsers = "ManageUsers";
+    public const string ReadMasterData = "ReadMasterData";
+    public const string ManageMasterData = "ManageMasterData";
     public static IReadOnlyList<string> All { get; } = Array.AsReadOnly(new[]
         { Admin, "Manager", "PurchasingStaff", "SalesStaff", "ProductionStaff", "WarehouseStaff", "Viewer" });
 

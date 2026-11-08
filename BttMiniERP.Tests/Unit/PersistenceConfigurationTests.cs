@@ -15,7 +15,7 @@ public sealed class PersistenceConfigurationTests
     {
         using var context = new ApplicationDbContextFactory().CreateDbContext(["--offline"]);
         Assert.False(context.Database.HasPendingModelChanges());
-        Assert.Equal(2, context.Database.GetMigrations().Count());
+        Assert.Equal(3, context.Database.GetMigrations().Count());
         var migrator = Microsoft.EntityFrameworkCore.Infrastructure.AccessorExtensions.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>(context);
         var script = migrator.GenerateScript(options: Microsoft.EntityFrameworkCore.Migrations.MigrationsSqlGenerationOptions.Idempotent);
         Assert.Contains("CREATE TABLE [AspNetUsers]", script);

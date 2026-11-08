@@ -58,6 +58,8 @@ public static class SecurityRegistration
         {
             options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
             options.AddPolicy(AppRoles.ManageUsers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin));
+            options.AddPolicy(AppRoles.ReadMasterData, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.All));
+            options.AddPolicy(AppRoles.ManageMasterData, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager"));
         });
         services.AddRateLimiter(options =>
         {

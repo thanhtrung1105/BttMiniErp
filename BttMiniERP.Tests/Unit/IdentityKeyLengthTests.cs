@@ -105,7 +105,8 @@ public sealed class IdentityKeyLengthTests
         var tables = original.UpOperations.OfType<CreateTableOperation>().ToArray();
         var originalForeignKeys = tables.SelectMany(table => table.ForeignKeys).OrderBy(fk => fk.Name).ToArray();
         using var context = new ApplicationDbContextFactory().CreateDbContext(["--offline"]);
-        var currentForeignKeys = context.Model.GetEntityTypes().SelectMany(entity => entity.GetForeignKeys())
+        var currentForeignKeys = context.Model.GetEntityTypes().Where(entity => entity.GetTableName()!.StartsWith("AspNet"))
+            .SelectMany(entity => entity.GetForeignKeys())
             .OrderBy(fk => fk.GetConstraintName()).ToArray();
         Assert.Equal(6, originalForeignKeys.Length);
         Assert.Equal(originalForeignKeys.Select(fk => fk.Name), currentForeignKeys.Select(fk => fk.GetConstraintName()));
@@ -163,7 +164,8 @@ public sealed class IdentityKeyLengthTests
         => $"{fk.Name}|{fk.Table}|{string.Join(',', fk.Columns)}|{fk.PrincipalTable}|{string.Join(',', fk.PrincipalColumns!)}|{fk.OnDelete}|{fk.OnUpdate}";
 
     private static IEnumerable<Microsoft.EntityFrameworkCore.Metadata.IProperty> KeyProperties(ApplicationDbContext context)
-        => context.Model.GetEntityTypes().SelectMany(entity => entity.GetProperties())
+        => context.Model.GetEntityTypes().Where(entity => entity.GetTableName()!.StartsWith("AspNet"))
+            .SelectMany(entity => entity.GetProperties())
             .Where(property => property.ClrType == typeof(string) && (property.IsPrimaryKey() || property.IsForeignKey()));
 
     private static string[] KeyShape(ApplicationDbContext context)

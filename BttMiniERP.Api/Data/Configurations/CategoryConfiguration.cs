@@ -1,0 +1,23 @@
+using BttMiniERP.Api.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace BttMiniERP.Api.Data.Configurations;
+
+public sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
+{
+    public void Configure(EntityTypeBuilder<Category> builder)
+    {
+        builder.ToTable("Categories");
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Code).HasMaxLength(50).IsRequired();
+        builder.HasIndex(x => x.Code).IsUnique();
+        builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.RowVersion).IsRowVersion();
+        builder.Property(x => x.CreatedByUserId).HasMaxLength(128).IsRequired();
+        builder.Property(x => x.UpdatedByUserId).HasMaxLength(128);
+        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.NoAction);
+        builder.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UpdatedByUserId).OnDelete(DeleteBehavior.NoAction);
+        builder.Property(x => x.Description).HasMaxLength(1000);
+    }
+}

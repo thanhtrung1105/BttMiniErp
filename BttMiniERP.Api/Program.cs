@@ -6,6 +6,8 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
     context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier);
 builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BttMiniERP.Api.Common.Authorization.BearerOpenApiTransformer>());
 builder.Services.AddPersistence(builder.Configuration, builder.Environment.EnvironmentName);
+builder.Services.AddScoped<BttMiniERP.Api.Services.CategoryService>();
+builder.Services.AddScoped<BttMiniERP.Api.Services.ItemService>();
 BttMiniERP.Api.Common.Authorization.SecurityRegistration.AddApplicationSecurity(builder.Services, builder.Configuration);
 
 var app = builder.Build();
