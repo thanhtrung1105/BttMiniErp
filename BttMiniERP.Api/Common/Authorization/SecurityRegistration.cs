@@ -58,6 +58,10 @@ public static class SecurityRegistration
         {
             options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
             options.AddPolicy(AppRoles.ManageUsers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin));
+            options.AddPolicy(AppRoles.ReadSuppliers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "PurchasingStaff", "WarehouseStaff", "Viewer"));
+            options.AddPolicy(AppRoles.ManageSuppliers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "PurchasingStaff"));
+            options.AddPolicy(AppRoles.ReadCustomers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "SalesStaff", "WarehouseStaff", "Viewer"));
+            options.AddPolicy(AppRoles.ManageCustomers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "SalesStaff"));
             options.AddPolicy(AppRoles.ReadMasterData, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.All));
             options.AddPolicy(AppRoles.ManageMasterData, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager"));
         });

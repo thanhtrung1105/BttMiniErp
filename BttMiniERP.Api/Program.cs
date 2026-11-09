@@ -7,6 +7,8 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
 builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BttMiniERP.Api.Common.Authorization.BearerOpenApiTransformer>());
 builder.Services.AddPersistence(builder.Configuration, builder.Environment.EnvironmentName);
 builder.Services.AddScoped<BttMiniERP.Api.Services.CategoryService>();
+builder.Services.AddScoped<BttMiniERP.Api.Services.SupplierService>();
+builder.Services.AddScoped<BttMiniERP.Api.Services.CustomerService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.ItemService>();
 BttMiniERP.Api.Common.Authorization.SecurityRegistration.AddApplicationSecurity(builder.Services, builder.Configuration);
 

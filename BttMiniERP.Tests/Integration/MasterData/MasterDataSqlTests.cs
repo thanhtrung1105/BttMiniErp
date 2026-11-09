@@ -197,7 +197,7 @@ public sealed class MasterDataSqlTests
         await using var fixture = await MasterDataSqlFixture.OpenAsync();
         await using var db = fixture.Context();
         await db.Database.OpenConnectionAsync();
-        Assert.Equal(3, (await db.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(db.Database.GetMigrations(), await db.Database.GetAppliedMigrationsAsync());
         var keys = await IdentityDatabaseVerifier.ReadRowsAsync(db, "SELECT t.name,k.name FROM sys.key_constraints k JOIN sys.tables t ON t.object_id=k.parent_object_id WHERE t.name IN ('Items','Categories') AND k.type='PK' ORDER BY t.name");
         Assert.Equal(new[] { "Categories|PK_Categories", "Items|PK_Items" }, keys);
         var fks = await IdentityDatabaseVerifier.ReadRowsAsync(db, "SELECT f.name,f.delete_referential_action_desc,CAST(f.is_disabled AS int),CAST(f.is_not_trusted AS int) FROM sys.foreign_keys f JOIN sys.tables t ON t.object_id=f.parent_object_id WHERE t.name IN ('Items','Categories') ORDER BY f.name");

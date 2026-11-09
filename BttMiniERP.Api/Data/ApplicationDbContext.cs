@@ -1,4 +1,4 @@
-﻿using BttMiniERP.Api.Entities;
+using BttMiniERP.Api.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using BttMiniERP.Api.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +8,8 @@ namespace BttMiniERP.Api.Data;
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
+    public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Item> Items => Set<Item>();
 

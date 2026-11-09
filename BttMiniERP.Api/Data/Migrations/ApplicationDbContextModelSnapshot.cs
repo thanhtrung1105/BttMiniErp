@@ -146,6 +146,74 @@ namespace BttMiniERP.Api.Data.Migrations
                     b.ToTable("Categories", (string)null);
                 });
 
+            modelBuilder.Entity("BttMiniERP.Api.Entities.Customer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("Customers", (string)null);
+                });
+
             modelBuilder.Entity("BttMiniERP.Api.Entities.Item", b =>
                 {
                     b.Property<int>("Id")
@@ -226,6 +294,78 @@ namespace BttMiniERP.Api.Data.Migrations
 
                             t.HasCheckConstraint("CK_Items_SalePrice", "[SalePrice] >= 0");
                         });
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.Supplier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(254)
+                        .HasColumnType("nvarchar(254)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("TaxCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("Suppliers", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -386,6 +526,20 @@ namespace BttMiniERP.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
+            modelBuilder.Entity("BttMiniERP.Api.Entities.Customer", b =>
+                {
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
             modelBuilder.Entity("BttMiniERP.Api.Entities.Item", b =>
                 {
                     b.HasOne("BttMiniERP.Api.Entities.Category", "Category")
@@ -406,6 +560,20 @@ namespace BttMiniERP.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.Supplier", b =>
+                {
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

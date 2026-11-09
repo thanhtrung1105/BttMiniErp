@@ -51,7 +51,9 @@ public static class MasterDataRules
         catch (DbUpdateConcurrencyException) { throw new ApiException(409, "Dữ liệu đã thay đổi. Hãy tải lại RowVersion."); }
         catch (DbUpdateException error) when (error.InnerException is SqlException sql && sql.Number is 2601 or 2627
             && (sql.Message.Contains("IX_Categories_Code", StringComparison.Ordinal)
-                || sql.Message.Contains("IX_Items_Code", StringComparison.Ordinal)))
+                || sql.Message.Contains("IX_Items_Code", StringComparison.Ordinal)
+                || sql.Message.Contains("IX_Suppliers_Code", StringComparison.Ordinal)
+                || sql.Message.Contains("IX_Customers_Code", StringComparison.Ordinal)))
         { throw new ApiException(409, "Mã danh mục đã tồn tại."); }
     }
 }
