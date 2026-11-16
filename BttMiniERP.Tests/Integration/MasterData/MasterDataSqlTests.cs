@@ -162,7 +162,7 @@ public sealed class MasterDataSqlTests
         await using var setup = fixture.Context();
         var category = await fixture.Categories(setup).CreateAsync(new() { Code = "cat", Name = "Category" }, Ct);
         var item = await fixture.Items(setup).CreateAsync(ItemRequest(category.Id, "item", ItemType.RawMaterial), Ct);
-        var barrier = new TwoSaves();
+        var barrier = new TwoItemLockAttempts();
         await using var first = fixture.Context(barrier);
         await using var second = fixture.Context(barrier);
         async Task<(int Status, string Name)> Change(BttMiniERP.Api.Data.ApplicationDbContext db, string name)

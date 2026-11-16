@@ -108,8 +108,8 @@ public sealed partial class PartnersSqlTests
         await using var db = fixture.Context();
         await db.Database.OpenConnectionAsync();
         var history = (await db.Database.GetAppliedMigrationsAsync()).ToArray();
-        Assert.Equal(4, history.Length);
-        Assert.EndsWith("_AddPartners", history[^1]);
+        Assert.Equal(7, history.Length);
+        Assert.EndsWith("_AddPurchaseConfirmationAudit", history[^1]);
         Assert.Equal(db.Database.GetMigrations(), history);
         var keys = await IdentityDatabaseVerifier.ReadRowsAsync(db, "SELECT t.name,k.name,c.name FROM sys.key_constraints k JOIN sys.tables t ON t.object_id=k.parent_object_id JOIN sys.index_columns i ON i.object_id=t.object_id AND i.index_id=k.unique_index_id JOIN sys.columns c ON c.object_id=i.object_id AND c.column_id=i.column_id WHERE t.name IN ('Customers','Suppliers') AND k.type='PK' ORDER BY t.name");
         Assert.Equal(new[] { "Customers|PK_Customers|Id", "Suppliers|PK_Suppliers|Id" }, keys);

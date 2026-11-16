@@ -53,6 +53,9 @@ public class ItemService(ApplicationDbContext context, CurrentUser actor, TimePr
             SalePrice = request.SalePrice, IsActive = request.IsActive, CreatedAt = clock.GetUtcNow(), CreatedByUserId = actor.Id };
         context.Items.Add(entity);
         await MasterDataRules.SaveAsync(context, cancellationToken);
+        context.InventoryBalances.Add(new InventoryBalance { ItemId = entity.Id, QuantityOnHand = 0,
+            CreatedAt = entity.CreatedAt, CreatedByUserId = entity.CreatedByUserId });
+        await MasterDataRules.SaveAsync(context, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         return ToResponse(entity);
     }
@@ -61,12 +64,15 @@ public class ItemService(ApplicationDbContext context, CurrentUser actor, TimePr
     {
         MasterDataRules.Validate(request);
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
-        var entity = await context.Items.SingleOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw NotFound();
+        var entity = await context.Items.FromSqlInterpolated(
+            $"SELECT * FROM [Items] WITH (UPDLOCK, HOLDLOCK) WHERE [Id] = {id}")
+            .SingleOrDefaultAsync(cancellationToken) ?? throw NotFound();
         context.Entry(entity).Property(x => x.RowVersion).OriginalValue = MasterDataRules.ParseVersion(request.RowVersion);
-        // P2.1 chưa có BOM/chứng từ/snapshot/ledger. P3/P4 phải thay false bằng truy vấn
-        // tham chiếu có khóa trong transaction trước khi thêm đường tạo tham chiếu nghiệp vụ.
+        // Balance 0 không coi là đã sử dụng. P3/P4 bổ sung tham chiếu chứng từ/BOM khi có bảng thật.
         MasterDataRules.EnsureClassificationChangeAllowed(entity.ItemType, entity.Unit,
-            request.ItemType!.Value, request.Unit, hasBusinessReferences: false);
+            request.ItemType!.Value, request.Unit,
+            hasBusinessReferences: await context.InventoryTransactions.AnyAsync(x => x.ItemId == id, cancellationToken)
+                || await context.PurchaseReceiptLines.AnyAsync(x => x.ItemId == id, cancellationToken));
         if (entity.CategoryId != request.CategoryId) await RequireActiveCategoryAsync(request.CategoryId, cancellationToken);
         var code = MasterDataRules.NormalizeCode(request.Code);
         await EnsureUniqueAsync(code, id, cancellationToken);

@@ -56,6 +56,9 @@ public static class SecurityRegistration
             });
         services.AddAuthorization(options =>
         {
+            options.AddPolicy(AppRoles.ReadPurchaseReceipts, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "PurchasingStaff", "WarehouseStaff"));
+            options.AddPolicy(AppRoles.ManagePurchaseReceipts, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "PurchasingStaff"));
+            options.AddPolicy(AppRoles.ConfirmPurchaseReceipts, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "PurchasingStaff", "WarehouseStaff"));
             options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
             options.AddPolicy(AppRoles.ManageUsers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin));
             options.AddPolicy(AppRoles.ReadSuppliers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "PurchasingStaff", "WarehouseStaff", "Viewer"));

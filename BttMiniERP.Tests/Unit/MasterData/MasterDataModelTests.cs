@@ -35,7 +35,7 @@ public sealed class MasterDataModelTests
         Assert.False(item.FindProperty("CategoryId")!.IsNullable);
         foreach (var price in new[] { "PurchasePrice", "SalePrice" })
             Assert.Equal("decimal(18,2)", item.FindProperty(price)!.GetColumnType());
-        Assert.DoesNotContain(context.Model.GetEntityTypes(), x => x.GetTableName()!.Contains("Inventory"));
+        Assert.NotNull(context.Model.FindEntityType(typeof(InventoryBalance)));
         Assert.Equal(System.Data.ConnectionState.Closed, context.Database.GetDbConnection().State);
     }
 
