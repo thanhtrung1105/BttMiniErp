@@ -56,6 +56,8 @@ public static class SecurityRegistration
             });
         services.AddAuthorization(options =>
         {
+            options.AddPolicy(AppRoles.ReadProductionOrders, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "ProductionStaff", "WarehouseStaff"));
+            options.AddPolicy(AppRoles.ManageProductionOrders, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "ProductionStaff"));
             options.AddPolicy(AppRoles.ReadBillOfMaterials, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "ProductionStaff", "WarehouseStaff", "Viewer"));
             options.AddPolicy(AppRoles.ManageBillOfMaterials, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager"));
             options.AddPolicy(AppRoles.ReadPurchaseReceipts, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "PurchasingStaff", "WarehouseStaff"));

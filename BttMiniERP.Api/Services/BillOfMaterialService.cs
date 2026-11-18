@@ -61,8 +61,9 @@ public class BillOfMaterialService(ApplicationDbContext db, CurrentUser actor, T
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var bom = await Lock(id, version, ct);
         var next = BillOfMaterialRules.NextVersion(bom.Version);
-        // P4.1 chưa có ProductionOrders. P4.2 phải kiểm tra tham chiếu trước đổi FinishedProductId
-        // và dùng snapshot riêng; không dùng Details đang thay thế làm lịch sử sản xuất.
+        // Create ProductionOrder giữ cùng khóa BOM, nên không có khoảng trống giữa kiểm tra và đổi sản phẩm.
+        if (bom.FinishedProductId != request.FinishedProductId && await db.ProductionOrders.AnyAsync(x => x.BomId == id, ct))
+            throw new ApiException(409, "BOM đã có lệnh sản xuất, không được đổi thành phẩm.");
         await ValidateItems(request.FinishedProductId, details, ct);
         await RequireUnique(code, request.FinishedProductId, id, ct);
         db.BillOfMaterialDetails.RemoveRange(bom.Details);

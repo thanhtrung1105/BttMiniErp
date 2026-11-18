@@ -493,6 +493,148 @@ namespace BttMiniERP.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BttMiniERP.Api.Entities.ProductionOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BomId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BomVersionSnapshot")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CancelledByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ConfirmedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("FinishedProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BomId");
+
+                    b.HasIndex("CancelledByUserId");
+
+                    b.HasIndex("ConfirmedByUserId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("FinishedProductId");
+
+                    b.HasIndex("OrderNumber")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("CreatedAt", "Id");
+
+                    b.HasIndex("Status", "CreatedAt", "Id");
+
+                    b.ToTable("ProductionOrders", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductionOrders_BomVersion", "[BomVersionSnapshot] >= 1");
+
+                            t.HasCheckConstraint("CK_ProductionOrders_Quantity", "[Quantity] > 0");
+
+                            t.HasCheckConstraint("CK_ProductionOrders_Status", "[Status] IN (0,1,2)");
+                        });
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.ProductionOrderMaterial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("ActualQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("ProductionOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("QuantityPerUnitSnapshot")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("RequiredQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.HasIndex("ProductionOrderId", "RawMaterialId")
+                        .IsUnique();
+
+                    b.ToTable("ProductionOrderMaterials", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ProductionOrderMaterials_Actual", "[ActualQuantity] IS NULL OR [ActualQuantity] > 0");
+
+                            t.HasCheckConstraint("CK_ProductionOrderMaterials_PerUnit", "[QuantityPerUnitSnapshot] > 0");
+
+                            t.HasCheckConstraint("CK_ProductionOrderMaterials_Required", "[RequiredQuantity] > 0");
+                        });
+                });
+
             modelBuilder.Entity("BttMiniERP.Api.Entities.PurchaseReceipt", b =>
                 {
                     b.Property<int>("Id")
@@ -972,6 +1114,57 @@ namespace BttMiniERP.Api.Data.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("BttMiniERP.Api.Entities.ProductionOrder", b =>
+                {
+                    b.HasOne("BttMiniERP.Api.Entities.BillOfMaterial", null)
+                        .WithMany()
+                        .HasForeignKey("BomId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CancelledByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ConfirmedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("FinishedProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.ProductionOrderMaterial", b =>
+                {
+                    b.HasOne("BttMiniERP.Api.Entities.ProductionOrder", null)
+                        .WithMany("Materials")
+                        .HasForeignKey("ProductionOrderId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BttMiniERP.Api.Entities.PurchaseReceipt", b =>
                 {
                     b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
@@ -1085,6 +1278,11 @@ namespace BttMiniERP.Api.Data.Migrations
             modelBuilder.Entity("BttMiniERP.Api.Entities.BillOfMaterial", b =>
                 {
                     b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.ProductionOrder", b =>
+                {
+                    b.Navigation("Materials");
                 });
 
             modelBuilder.Entity("BttMiniERP.Api.Entities.PurchaseReceipt", b =>

@@ -139,7 +139,7 @@ public sealed class BillOfMaterialsSqlTests
         await verify.Database.OpenConnectionAsync();
         var fks = await IdentityDatabaseVerifier.ReadRowsAsync(verify, "SELECT delete_referential_action_desc FROM sys.foreign_keys WHERE parent_object_id IN (OBJECT_ID('BillOfMaterials'),OBJECT_ID('BillOfMaterialDetails'))");
         Assert.Equal(5, fks.Count); Assert.All(fks, x => Assert.Equal("NO_ACTION", x));
-        Assert.Equal(8, (await verify.Database.GetAppliedMigrationsAsync()).Count());
+        Assert.Equal(9, (await verify.Database.GetAppliedMigrationsAsync()).Count());
         Assert.Empty(await verify.Database.GetPendingMigrationsAsync());
     }
 

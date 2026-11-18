@@ -74,7 +74,9 @@ public class ItemService(ApplicationDbContext context, CurrentUser actor, TimePr
             hasBusinessReferences: await context.InventoryTransactions.AnyAsync(x => x.ItemId == id, cancellationToken)
                 || await context.PurchaseReceiptLines.AnyAsync(x => x.ItemId == id, cancellationToken)
                 || await context.BillOfMaterials.AnyAsync(x => x.FinishedProductId == id, cancellationToken)
-                || await context.BillOfMaterialDetails.AnyAsync(x => x.RawMaterialId == id, cancellationToken));
+                || await context.BillOfMaterialDetails.AnyAsync(x => x.RawMaterialId == id, cancellationToken)
+                || await context.ProductionOrders.AnyAsync(x => x.FinishedProductId == id, cancellationToken)
+                || await context.ProductionOrderMaterials.AnyAsync(x => x.RawMaterialId == id, cancellationToken));
         if (entity.CategoryId != request.CategoryId) await RequireActiveCategoryAsync(request.CategoryId, cancellationToken);
         var code = MasterDataRules.NormalizeCode(request.Code);
         await EnsureUniqueAsync(code, id, cancellationToken);
