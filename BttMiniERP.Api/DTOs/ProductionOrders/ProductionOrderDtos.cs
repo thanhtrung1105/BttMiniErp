@@ -16,6 +16,10 @@ public sealed class UpdateProductionOrderRequest
     [StringLength(1000)] public string? Note { get; init; }
     [Required, RowVersion] public string RowVersion { get; init; } = "";
 }
+public sealed class ConfirmProductionOrderRequest
+{
+    [Required, RowVersion] public string RowVersion { get; init; } = "";
+}
 public sealed class CancelProductionOrderRequest
 {
     [Required, RowVersion] public string RowVersion { get; init; } = "";

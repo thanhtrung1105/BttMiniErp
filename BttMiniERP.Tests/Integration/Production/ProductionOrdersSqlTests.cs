@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace BttMiniERP.Tests.Integration.Production;
 
 [Collection("MasterData SQL"), Trait("Category", "SqlServer"), Trait("SqlSuite", "Production")]
-public sealed class ProductionOrdersSqlTests
+public sealed partial class ProductionOrdersSqlTests
 {
     private static async Task<BillOfMaterialResponse> Setup(MasterDataSqlFixture f)
     {

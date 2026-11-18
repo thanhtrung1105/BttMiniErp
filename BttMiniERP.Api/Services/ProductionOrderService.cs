@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BttMiniERP.Api.Services;
 
-public class ProductionOrderService(ApplicationDbContext db, CurrentUser actor, TimeProvider clock)
+public class ProductionOrderService(ApplicationDbContext db, CurrentUser actor, TimeProvider clock, InventoryService inventory)
 {
     public virtual async Task<ProductionOrderPage> ListAsync(ProductionOrderQuery query, CancellationToken ct)
     {
@@ -90,6 +90,24 @@ public class ProductionOrderService(ApplicationDbContext db, CurrentUser actor, 
         order.CancelledByUserId = order.UpdatedByUserId = actor.Id;
         await Save(ct);
         await tx.CommitAsync(ct);
+        return Response(order);
+    }
+
+    public virtual async Task<ProductionOrderResponse> ConfirmAsync(int id, string rowVersion, CancellationToken ct)
+    {
+        var version = MasterDataRules.ParseVersion(rowVersion);
+        await using var transaction = await db.Database.BeginTransactionAsync(ct);
+        var order = await LockDraft(id, version, ct);
+        var movements = ProductionOrderRules.ConfirmationMovements(order);
+        await inventory.ApplyAsync(movements, ct);
+
+        foreach (var material in order.Materials)
+            material.ActualQuantity = material.RequiredQuantity;
+        order.Status = DocumentStatus.Confirmed;
+        order.ConfirmedAt = order.UpdatedAt = clock.GetUtcNow();
+        order.ConfirmedByUserId = order.UpdatedByUserId = actor.Id;
+        await Save(ct);
+        await transaction.CommitAsync(ct);
         return Response(order);
     }
 

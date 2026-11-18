@@ -76,7 +76,7 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     public CategoryService Categories(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public ItemService Items(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public InventoryService Inventory(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
-    public ProductionOrderService Production(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
+    public ProductionOrderService Production(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System, Inventory(db));
     public BillOfMaterialService Boms(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public SupplierService Suppliers(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public PurchaseReceiptService Receipts(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System, Inventory(db));

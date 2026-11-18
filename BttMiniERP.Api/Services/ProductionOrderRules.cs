@@ -40,8 +40,32 @@ public static class ProductionOrderRules
                 RequiredQuantity = RequiredQuantity(x.QuantityPerUnit, quantity) };
         }).ToArray();
     }
+    public static List<InventoryMovement> ConfirmationMovements(ProductionOrder order)
+    {
+        RequireDraft(order.Status);
+        if (order.Materials.Count == 0 || order.BomVersionSnapshot < 1)
+            throw new ApiException(409, "Lệnh thiếu snapshot định mức hợp lệ.");
+
+        var movements = new List<InventoryMovement>();
+        var materials = new HashSet<int>();
+        foreach (var line in order.Materials)
+        {
+            if (line.Id <= 0 || line.ProductionOrderId != order.Id || line.ActualQuantity.HasValue
+                || line.RawMaterialId <= 0 || line.RawMaterialId == order.FinishedProductId
+                || !materials.Add(line.RawMaterialId)
+                || line.RequiredQuantity != RequiredQuantity(line.QuantityPerUnitSnapshot, order.Quantity))
+                throw new ApiException(409, "Chi tiết snapshot không hợp lệ.");
+
+            movements.Add(new(line.RawMaterialId, -line.RequiredQuantity, InventoryTransactionType.ProductionConsumption,
+                SourceDocumentType.ProductionOrder, order.Id, line.Id));
+        }
+        movements.Add(new(order.FinishedProductId, order.Quantity, InventoryTransactionType.ProductionOutput,
+            SourceDocumentType.ProductionOrder, order.Id, 0));
+        return movements;
+    }
+
     public static void RequireDraft(DocumentStatus status)
     {
-        if (status != DocumentStatus.Draft) throw new ApiException(409, "Chỉ được sửa hoặc hủy lệnh sản xuất Draft.");
+        if (status != DocumentStatus.Draft) throw new ApiException(409, "Thao tác yêu cầu lệnh sản xuất ở trạng thái Draft.");
     }
 }

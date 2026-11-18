@@ -58,6 +58,22 @@ public sealed class ProductionOrdersHttpTests
         Assert.Equal(0,f.Calls);
     }
 
+    [Theory]
+    [InlineData(null, 401)] [InlineData("Viewer", 403)] [InlineData("SalesStaff", 403)]
+    [InlineData("PurchasingStaff", 403)] [InlineData("WarehouseStaff", 200)] [InlineData("Admin", 200)]
+    [InlineData("Manager", 200)] [InlineData("ProductionStaff", 200)]
+    public async Task ConfirmEnforcesDedicatedPolicy(string? role, int expected)
+    {
+        await using var factory = new ProductionOrdersApiFactory();
+        using var client = factory.CreateClient();
+        if (role != null) client.DefaultRequestHeaders.Authorization = new("Bearer", factory.Token(role));
+        var response = await client.PostAsJsonAsync(Route + "/1/confirm", new { rowVersion = "AAAAAAAAAAA=" });
+        Assert.Equal(expected, (int)response.StatusCode);
+        Assert.Equal(expected == 200 ? 1 : 0, factory.Calls);
+        if (expected == 200)
+            Assert.Equal(DocumentStatus.Confirmed, (await response.Content.ReadFromJsonAsync<ProductionOrderResponse>())!.Status);
+    }
+
     [Fact]
     public async Task InvalidInputsImmutableBomAndMissingVersionAreRejected()
     {
@@ -76,7 +92,7 @@ public sealed class ProductionOrdersHttpTests
         Assert.Equal(HttpStatusCode.OK,(await c.GetAsync(Route+"?bomId=2&finishedProductId=10&status=2&page=2&pageSize=5&sortBy=id&sortDirection=asc")).StatusCode);
         Assert.Equal(2,f.LastQuery!.BomId); Assert.Equal(DocumentStatus.Cancelled,f.LastQuery.Status);
         Assert.Equal(2,f.LastQuery.Page);
-        Assert.Equal(HttpStatusCode.NotFound,(await c.PostAsJsonAsync(Route+"/1/confirm",new {rowVersion="AAAAAAAAAAA="})).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest,(await c.PostAsJsonAsync(Route+"/1/confirm",new {rowVersion="AAAAAAAAAAA=", actualQuantity=1})).StatusCode);
         Assert.Equal(HttpStatusCode.MethodNotAllowed,(await c.DeleteAsync(Route+"/1")).StatusCode);
     }
 

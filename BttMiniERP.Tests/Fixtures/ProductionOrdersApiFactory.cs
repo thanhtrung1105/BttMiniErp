@@ -18,7 +18,7 @@ public sealed class ProductionOrdersApiFactory : ApiFactory
         base.ConfigureWebHost(builder);
         builder.ConfigureServices(s => s.AddScoped<ProductionOrderService>(_ => new Double(this)));
     }
-    private sealed class Double(ProductionOrdersApiFactory f) : ProductionOrderService(null!, null!, null!)
+    private sealed class Double(ProductionOrdersApiFactory f) : ProductionOrderService(null!, null!, null!, null!)
     {
         private ProductionOrderResponse Result(decimal quantity = 3, DocumentStatus status = DocumentStatus.Draft)
         {
@@ -36,6 +36,11 @@ public sealed class ProductionOrdersApiFactory : ApiFactory
         { MasterDataRules.Validate(r); ProductionOrderRules.RequireQuantity(r.Quantity); return Task.FromResult(Result(r.Quantity)); }
         public override Task<ProductionOrderResponse> CancelAsync(int id,string version,CancellationToken ct)
         { MasterDataRules.ParseVersion(version); return Task.FromResult(Result(status:DocumentStatus.Cancelled)); }
+        public override Task<ProductionOrderResponse> ConfirmAsync(int id, string version, CancellationToken ct)
+        {
+            MasterDataRules.ParseVersion(version);
+            return Task.FromResult(Result(status: DocumentStatus.Confirmed));
+        }
         public override Task<ProductionOrderPage> ListAsync(ProductionOrderQuery q,CancellationToken ct)
         { MasterDataRules.Validate(q); f.LastQuery=q; Result(); return Task.FromResult(new ProductionOrderPage([],q.Page,q.PageSize,0)); }
     }

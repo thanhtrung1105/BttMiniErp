@@ -23,6 +23,10 @@ public sealed class ProductionOrdersController(ProductionOrderService service) :
     [HttpPut("{id:int:min(1)}"), Authorize(Policy = AppRoles.ManageProductionOrders)]
     public async Task<ActionResult<ProductionOrderResponse>> Update(int id, UpdateProductionOrderRequest request, CancellationToken ct)
         => Ok(await service.UpdateAsync(id, request, ct));
+    [HttpPost("{id:int:min(1)}/confirm"), Authorize(Policy = AppRoles.ConfirmProductionOrders)]
+    public async Task<ActionResult<ProductionOrderResponse>> Confirm(int id, ConfirmProductionOrderRequest request, CancellationToken ct)
+        => Ok(await service.ConfirmAsync(id, request.RowVersion, ct));
+
     [HttpPost("{id:int:min(1)}/cancel"), Authorize(Policy = AppRoles.ManageProductionOrders)]
     public async Task<ActionResult<ProductionOrderResponse>> Cancel(int id, CancelProductionOrderRequest request, CancellationToken ct)
         => Ok(await service.CancelAsync(id, request.RowVersion, ct));

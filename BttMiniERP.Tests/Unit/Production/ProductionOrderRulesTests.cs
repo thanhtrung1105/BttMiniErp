@@ -78,7 +78,7 @@ public sealed class ProductionOrderRulesTests
     public async Task InvalidRequestsFailBeforeAnySqlConnection()
     {
         using var db = new ApplicationDbContextFactory().CreateDbContext(["--offline"]);
-        var service = new ProductionOrderService(db, null!, TimeProvider.System);
+        var service = new ProductionOrderService(db, null!, TimeProvider.System, null!);
         await Assert.ThrowsAsync<ApiException>(() => service.CreateAsync(new() { BomId = 1, Quantity = 0 }, default));
         await Assert.ThrowsAsync<ApiException>(() => service.CreateAsync(new() { BomId = 0, Quantity = 1 }, default));
         await Assert.ThrowsAsync<ApiException>(() => service.UpdateAsync(1, new() { Quantity = 1, RowVersion = "bad" }, default));
