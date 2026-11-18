@@ -1,5 +1,9 @@
 # Luật nghiệp vụ dự kiến
 
+## P5.2 — Xuất thành phẩm
+
+Xác nhận áp dụng cho Draft có dòng, khách hàng hoạt động và mọi Item là thành phẩm hoạt động. Server dùng lượng và giá đã lưu. Mỗi dòng tạo một SalesIssue âm với nguồn SalesOrder, ID đơn và ID dòng. Kho giảm có điều kiện theo ItemId tăng dần. Nếu một dòng thiếu hàng, đơn vẫn Draft và cả số dư, ledger, audit đều rollback. Cùng khóa header và RowVersion với sửa/hủy giữ mỗi đơn chỉ được ghi kho một lần. [Luồng xác nhận](features/sales.md).
+
 ## P5.1 — Đơn bán Draft
 
 Khách hàng và từng thành phẩm phải đang hoạt động lúc tạo/sửa. Mỗi Item xuất hiện một lần. Số lượng dương có tối đa ba chữ số thập phân, đơn giá không âm có tối đa hai chữ số thập phân. Từng dòng được làm tròn AwayFromZero tới hai chữ số rồi mới cộng vào tổng. Từ chối vượt scale/precision hoặc tràn tổng. Mã SO-GUID, thứ tự dòng, số tiền và audit do server ghi. Mọi thao tác P5.1 giữ nguyên balance và ledger, kể cả khi tồn hiện tại bằng 0.

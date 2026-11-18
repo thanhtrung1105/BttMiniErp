@@ -51,9 +51,17 @@ public static class SalesOrderRules
         order.CancelledByUserId = order.UpdatedByUserId = actorId;
     }
 
+    public static InventoryMovement[] ConfirmationMovements(SalesOrder order)
+    {
+        RequireDraft(order.Status);
+        if (order.Lines.Count == 0) throw new ApiException(409, "Đơn bán chưa có dòng thành phẩm.");
+        return order.Lines.Select(line => new InventoryMovement(line.ItemId, -line.Quantity,
+            InventoryTransactionType.SalesIssue, SourceDocumentType.SalesOrder, order.Id, line.Id)).ToArray();
+    }
+
     public static void RequireDraft(DocumentStatus status)
     {
-        if (status != DocumentStatus.Draft) throw new ApiException(409, "Chỉ được sửa hoặc hủy đơn Draft.");
+        if (status != DocumentStatus.Draft) throw new ApiException(409, "Đơn bán đã kết thúc.");
     }
     public static void RequireCustomer(Customer? customer)
     {

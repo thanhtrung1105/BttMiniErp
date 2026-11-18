@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 namespace BttMiniERP.Tests.Integration.Sales;
 
 [Collection("MasterData SQL"), Trait("Category", "SqlServer"), Trait("SqlSuite", "Sales")]
-public sealed class SalesOrdersSqlTests
+public sealed partial class SalesOrdersSqlTests
 {
     private static async Task<(int Customer, int Item)> Setup(MasterDataSqlFixture f)
     {

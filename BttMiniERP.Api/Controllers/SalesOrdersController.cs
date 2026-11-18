@@ -22,6 +22,10 @@ public sealed class SalesOrdersController(SalesOrderService service) : Controlle
     [HttpPut("{id:int:min(1)}"), Authorize(Policy = AppRoles.ManageSalesOrders)]
     public async Task<ActionResult<SalesOrderResponse>> Update(int id, UpdateSalesOrderRequest request, CancellationToken ct)
         => Ok(await service.UpdateAsync(id, request, ct));
+    [HttpPost("{id:int:min(1)}/confirm"), Authorize(Policy = AppRoles.ConfirmSalesOrders)]
+    public async Task<ActionResult<SalesOrderResponse>> Confirm(int id, ConfirmSalesOrderRequest request, CancellationToken ct)
+        => Ok(await service.ConfirmAsync(id, request.RowVersion, ct));
+
     [HttpPost("{id:int:min(1)}/cancel"), Authorize(Policy = AppRoles.ManageSalesOrders)]
     public async Task<ActionResult<SalesOrderResponse>> Cancel(int id, CancelSalesOrderRequest request, CancellationToken ct)
         => Ok(await service.CancelAsync(id, request.RowVersion, ct));

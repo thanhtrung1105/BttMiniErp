@@ -34,6 +34,7 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     public const string PurchasingDatabaseName = "BttMiniERP_PurchasingTest";
     public const string ConfirmationDatabaseName = "BttMiniERP_PurchaseConfirmationTest";
     public const string SalesDatabaseName = "BttMiniERP_SalesTest";
+    public const string SalesConfirmDatabaseName = "BttMiniERP_SalesConfirmTest";
     public const string ProductionDatabaseName = "BttMiniERP_ProductionTest";
     public const string BomDatabaseName = "BttMiniERP_BomTest";
     private readonly string profile;
@@ -46,12 +47,22 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     private bool ownsSessionLock;
     public string ActorId { get; } = "p21-" + Guid.NewGuid().ToString("N");
     internal string Connection => connection;
-    private MasterDataSqlFixture(string connection, string profile) { this.connection = connection; this.profile = profile; databaseName = Target(profile); }
+    private MasterDataSqlFixture(string connection, string profile)
+    {
+        this.connection = connection;
+        this.profile = profile;
+        databaseName = new SqlConnectionStringBuilder(connection).InitialCatalog; // Đã đối chiếu allowlist trong ReadSettings.
+    }
     private static string Target(string profile) => profile switch { "MasterData" => DatabaseName, "Inventory" => InventoryDatabaseName, "InventoryMigration" => MigrationDatabaseName, "Purchasing" => PurchasingDatabaseName, "Confirmation" => ConfirmationDatabaseName, "Bom" => BomDatabaseName, "Sales" => SalesDatabaseName, "Production" => ProductionDatabaseName, _ => throw new InvalidOperationException("Profile không hợp lệ.") };
 
     public static string ReadSettings(Func<string, string?> read, string profile = "MasterData")
     {
         var target = Target(profile);
+        if (profile == "Sales" && read("BTT_RUN_SALES_CONFIRM_SQL_TESTS") is { } confirmOptIn)
+        {
+            if (confirmOptIn != "1") throw new InvalidOperationException("Opt-in SalesConfirm không hợp lệ.");
+            target = SalesConfirmDatabaseName;
+        }
         var flag = profile switch { "MasterData" => "MASTERDATA", "Inventory" => "INVENTORY", "Purchasing" => "PURCHASING", "Confirmation" => "CONFIRMATION", "Bom" => "BOM", "Sales" => "SALES", "Production" => "PRODUCTION", _ => "INVENTORY_MIGRATION" };
         var operations = profile == "InventoryMigration" ? "Verify,MigrationUpRollback,TemporaryWrites,CleanupOwnedRecords" : "Verify,TemporaryWrites,Concurrency,CleanupOwnedRecords";
         if (read("BTT_RUN_SQL_TESTS") != "1" || read($"BTT_RUN_{flag}_SQL_TESTS") != "1"
@@ -77,7 +88,7 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     public CategoryService Categories(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public ItemService Items(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public InventoryService Inventory(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
-    public SalesOrderService Sales(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
+    public SalesOrderService Sales(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System, Inventory(db));
     public CustomerService Customers(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public ProductionOrderService Production(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System, Inventory(db));
     public BillOfMaterialService Boms(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
@@ -160,21 +171,21 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
                     var customers = ownership.Customers.Keys.ToArray();
                     await db.Customers.Where(x => customers.Contains(x.Id) && x.CreatedByUserId == ActorId).ExecuteDeleteAsync();
                 }
-                if (profile == "Production")
+                if (profile is "Production" or "Sales")
                 {
                     var orders = ownership.Orders.Keys.ToArray();
                     var ownedOrders = db.ProductionOrders.Where(x => orders.Contains(x.Id) && x.CreatedByUserId == ActorId).Select(x => x.Id);
                     await db.ProductionOrderMaterials.Where(x => ownedOrders.Contains(x.ProductionOrderId)).ExecuteDeleteAsync();
                     await db.ProductionOrders.Where(x => orders.Contains(x.Id) && x.CreatedByUserId == ActorId).ExecuteDeleteAsync();
                 }
-                if (profile is "Bom" or "Production")
+                if (profile is "Bom" or "Production" or "Sales")
                 {
                     var boms = ownership.Boms.Keys.ToArray();
                     var ownedBoms = db.BillOfMaterials.Where(x => boms.Contains(x.Id) && x.CreatedByUserId == ActorId).Select(x => x.Id);
                     await db.BillOfMaterialDetails.Where(x => ownedBoms.Contains(x.BillOfMaterialId)).ExecuteDeleteAsync();
                     await db.BillOfMaterials.Where(x => boms.Contains(x.Id) && x.CreatedByUserId == ActorId).ExecuteDeleteAsync();
                 }
-                if (profile is "Purchasing" or "Confirmation")
+                if (profile is "Purchasing" or "Confirmation" or "Sales")
                 {
                     var owned = db.PurchaseReceipts.Where(x => receipts.Contains(x.Id) && x.CreatedByUserId == ActorId).Select(x => x.Id);
                     await db.PurchaseReceiptLines.Where(x => owned.Contains(x.PurchaseReceiptId)).ExecuteDeleteAsync();

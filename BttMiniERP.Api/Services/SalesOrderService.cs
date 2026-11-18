@@ -8,7 +8,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 namespace BttMiniERP.Api.Services;
 
-public class SalesOrderService(ApplicationDbContext db, CurrentUser actor, TimeProvider clock)
+public class SalesOrderService(ApplicationDbContext db, CurrentUser actor, TimeProvider clock, InventoryService inventory)
 {
     public virtual async Task<SalesOrderPage> ListAsync(SalesOrderQuery query, CancellationToken ct)
     {
@@ -92,6 +92,23 @@ public class SalesOrderService(ApplicationDbContext db, CurrentUser actor, TimeP
         await tx.CommitAsync(ct);
         return Response(order);
     }
+    public virtual async Task<SalesOrderResponse> ConfirmAsync(int id, string rowVersion, CancellationToken ct)
+    {
+        var version = MasterDataRules.ParseVersion(rowVersion);
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        var order = await LockOrder(id, version, ct);
+        var movements = SalesOrderRules.ConfirmationMovements(order);
+        await ValidateCustomer(order.CustomerId, ct);
+        await inventory.ApplyAsync(movements, ct);
+
+        order.Status = DocumentStatus.Confirmed;
+        order.ConfirmedByUserId = order.UpdatedByUserId = actor.Id;
+        order.ConfirmedAt = order.UpdatedAt = clock.GetUtcNow();
+        await Save(ct);
+        await tx.CommitAsync(ct);
+        return Response(order);
+    }
+
     private async Task<SalesOrder> LockOrder(int id, byte[] version, CancellationToken ct)
     {
         var order = await db.SalesOrders.FromSqlInterpolated(
@@ -104,11 +121,15 @@ public class SalesOrderService(ApplicationDbContext db, CurrentUser actor, TimeP
         order.Lines = await db.SalesOrderLines.Where(x => x.SalesOrderId == id).ToListAsync(ct);
         return order;
     }
-    private async Task ValidateReferences(int customerId, IEnumerable<SalesOrderLine> lines, CancellationToken ct)
+    private async Task ValidateCustomer(int customerId, CancellationToken ct)
     {
         var customer = await db.Customers.FromSqlInterpolated(
             $"SELECT * FROM [Customers] WITH (HOLDLOCK) WHERE [Id]={customerId}").AsNoTracking().SingleOrDefaultAsync(ct);
         SalesOrderRules.RequireCustomer(customer);
+    }
+    private async Task ValidateReferences(int customerId, IEnumerable<SalesOrderLine> lines, CancellationToken ct)
+    {
+        await ValidateCustomer(customerId, ct);
         foreach (var id in lines.Select(x => x.ItemId).Order())
         {
             var item = await db.Items.FromSqlInterpolated($"SELECT * FROM [Items] WITH (UPDLOCK, HOLDLOCK) WHERE [Id]={id}")

@@ -1,5 +1,9 @@
 # Kế hoạch API dự kiến
 
+## P5.2 — Xác nhận đơn bán
+
+`POST /api/v1/sales-orders/{id}/confirm` chỉ nhận `{"rowVersion":"…"}` từ lần đọc chi tiết. Admin, Manager, SalesStaff và WarehouseStaff được xác nhận. Thành công trả 200 với chi tiết đơn Confirmed, phiên bản mới và audit. Body hoặc phiên bản sai định dạng trả 400, thiếu JWT 401, thiếu quyền 403, không tìm thấy đơn 404. Phiên bản cũ, đơn đã kết thúc, đơn rỗng, khách hàng hoặc thành phẩm ngừng hoạt động và thiếu tồn trả 409 ProblemDetails. [Luồng xử lý](features/sales.md).
+
 ## P5.1 — Soạn đơn bán thành phẩm
 
 Mọi route dùng JWT. Admin, Manager, SalesStaff đọc và ghi. WarehouseStaff chỉ đọc. PurchasingStaff, ProductionStaff và Viewer không có quyền. Thiếu JWT trả 401, thiếu quyền trả 403.

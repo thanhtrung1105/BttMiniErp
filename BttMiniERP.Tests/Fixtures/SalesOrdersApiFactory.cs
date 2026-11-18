@@ -14,7 +14,7 @@ public sealed class SalesOrdersApiFactory : ApiFactory
     {
         base.ConfigureWebHost(builder); builder.ConfigureServices(s => s.AddScoped<SalesOrderService>(_ => new Double(this)));
     }
-    private sealed class Double(SalesOrdersApiFactory f) : SalesOrderService(null!, null!, null!)
+    private sealed class Double(SalesOrdersApiFactory f) : SalesOrderService(null!, null!, null!, null!)
     {
         private SalesOrderResponse Result(DocumentStatus status = DocumentStatus.Draft)
         {
@@ -26,6 +26,7 @@ public sealed class SalesOrdersApiFactory : ApiFactory
         public override Task<SalesOrderResponse> CreateAsync(CreateSalesOrderRequest r, CancellationToken ct) { SalesOrderRules.Calculate(r); return Task.FromResult(Result()); }
         public override Task<SalesOrderResponse> UpdateAsync(int id, UpdateSalesOrderRequest r, CancellationToken ct) { SalesOrderRules.Calculate(r); return Task.FromResult(Result()); }
         public override Task<SalesOrderResponse> CancelAsync(int id, string version, CancellationToken ct) => Task.FromResult(Result(DocumentStatus.Cancelled));
+        public override Task<SalesOrderResponse> ConfirmAsync(int id, string version, CancellationToken ct) => Task.FromResult(Result(DocumentStatus.Confirmed));
         public override Task<SalesOrderPage> ListAsync(SalesOrderQuery q, CancellationToken ct)
         { f.LastQuery = q; Result(); return Task.FromResult(new SalesOrderPage([], q.Page, q.PageSize, 0)); }
     }

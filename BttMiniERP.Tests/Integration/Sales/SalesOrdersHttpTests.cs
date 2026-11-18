@@ -37,16 +37,16 @@ public sealed class SalesOrdersHttpTests
     [InlineData("Viewer")]
     [InlineData(null)]
     [InlineData("")]
-    public async Task AllFiveEndpointsEnforceRoles(string? role)
+    public async Task SalesEndpointsEnforceRoles(string? role)
     {
         await using var f = new SalesOrdersApiFactory(); using var client = f.CreateClient();
         if (role != null) client.DefaultRequestHeaders.Authorization = new("Bearer", f.Token(role == "" ? [] : [role]));
         var allowed = 0;
-        foreach (var op in new[] { "list", "get", "create", "update", "cancel" })
+        foreach (var op in new[] { "list", "get", "create", "update", "cancel", "confirm" })
         {
             var read = op is "list" or "get";
-            var can = role is "Admin" or "Manager" or "SalesStaff" || (read && role == "WarehouseStaff");
-            var path = "/api/v1/sales-orders" + (op is "get" or "update" or "cancel" ? "/1" : "") + (op == "cancel" ? "/cancel" : "");
+            var can = role is "Admin" or "Manager" or "SalesStaff" || ((read || op == "confirm") && role == "WarehouseStaff");
+            var path = "/api/v1/sales-orders" + (op is "get" or "update" or "cancel" or "confirm" ? "/1" : "") + (op is "cancel" or "confirm" ? "/" + op : "");
             using var request = new HttpRequestMessage(read ? HttpMethod.Get : op == "update" ? HttpMethod.Put : HttpMethod.Post, path);
             if (!read) request.Content = op == "create" ? JsonContent.Create(new { customerId = 1, lines = new[] { new { itemId = 1, quantity = 1, unitPrice = 2 } } }) : op == "update" ? JsonContent.Create(new { customerId = 1, lines = new[] { new { itemId = 1, quantity = 1, unitPrice = 2 } }, rowVersion = "AAAAAAAAAAA=" }) : JsonContent.Create(new { rowVersion = "AAAAAAAAAAA=" });
             using var response = await client.SendAsync(request);
@@ -56,6 +56,7 @@ public sealed class SalesOrdersHttpTests
             {
                 allowed++; if (op == "create") Assert.EndsWith("/api/v1/sales-orders/1", response.Headers.Location!.ToString());
                 if (op == "cancel") Assert.Equal(DocumentStatus.Cancelled, (await response.Content.ReadFromJsonAsync<SalesOrderResponse>())!.Status);
+                if (op == "confirm") Assert.Equal(DocumentStatus.Confirmed, (await response.Content.ReadFromJsonAsync<SalesOrderResponse>())!.Status);
             }
         }
         Assert.Equal(allowed, f.Calls);
@@ -85,7 +86,9 @@ public sealed class SalesOrdersHttpTests
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync("/api/v1/sales-orders/1", new { customerId = 1, lines = new[] { new { itemId = 1, quantity = 1, unitPrice = 2 } } })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/sales-orders", new { customerId = 1, lines = new[] { new { itemId = 1, quantity = 1, unitPrice = 1, lineTotal = 1 } } })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/sales-orders", new { customerId = 1, lines = Array.Empty<object>() })).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await c.PostAsJsonAsync("/api/v1/sales-orders/1/confirm", new { rowVersion = "AAAAAAAAAAA=" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/sales-orders/1/confirm", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/sales-orders/1/confirm", new { rowVersion = "bad" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/sales-orders/1/confirm", new { rowVersion = "AAAAAAAAAAA=", totalAmount = 1 })).StatusCode);
         Assert.Equal(0, f.Calls);
         Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/api/v1/sales-orders?customerId=2&status=2&page=2&pageSize=3&sortBy=id&sortDirection=asc&from=2026-01-01T00:00:00Z&to=2026-02-01T00:00:00Z")).StatusCode);
         Assert.Equal(2, f.LastQuery!.CustomerId); Assert.Equal(DocumentStatus.Cancelled, f.LastQuery.Status); Assert.Equal(3, f.LastQuery.PageSize); Assert.Equal("id", f.LastQuery.SortBy);
@@ -97,7 +100,7 @@ public sealed class SalesOrdersHttpTests
     public async Task ExpectedServiceErrorsBecomeProblemDetails(int status)
     {
         await using var f = new SalesOrdersApiFactory { ErrorStatus = status }; using var c = f.CreateClient(); c.DefaultRequestHeaders.Authorization = new("Bearer", f.Token("Admin"));
-        foreach (var response in new[] { await c.GetAsync("/api/v1/sales-orders/1"), await c.PostAsJsonAsync("/api/v1/sales-orders/1/cancel", new { rowVersion = "AAAAAAAAAAA=" }) })
+        foreach (var response in new[] { await c.GetAsync("/api/v1/sales-orders/1"), await c.PostAsJsonAsync("/api/v1/sales-orders/1/cancel", new { rowVersion = "AAAAAAAAAAA=" }), await c.PostAsJsonAsync("/api/v1/sales-orders/1/confirm", new { rowVersion = "AAAAAAAAAAA=" }) })
         { Assert.Equal(status, (int)response.StatusCode); Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType); Assert.DoesNotContain("stackTrace", await response.Content.ReadAsStringAsync()); }
     }
 }

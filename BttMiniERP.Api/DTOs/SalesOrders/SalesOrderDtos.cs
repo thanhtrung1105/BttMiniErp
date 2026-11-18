@@ -14,6 +14,10 @@ public sealed class UpdateSalesOrderRequest : CreateSalesOrderRequest
 {
     [Required, RowVersion] public string RowVersion { get; init; } = "";
 }
+public sealed class ConfirmSalesOrderRequest
+{
+    [Required, RowVersion] public string RowVersion { get; init; } = "";
+}
 public sealed class CancelSalesOrderRequest
 {
     [Required, RowVersion] public string RowVersion { get; init; } = "";

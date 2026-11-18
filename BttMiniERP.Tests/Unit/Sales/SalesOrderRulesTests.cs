@@ -14,6 +14,25 @@ namespace BttMiniERP.Tests.Unit.Sales;
 public sealed class SalesOrderRulesTests
 {
     [Fact]
+    public void ConfirmationUsesPersistedLineIdentityAndNegativeQuantity()
+    {
+        var order = new SalesOrder { Id = 7, Lines = [new() { Id = 21, ItemId = 12, Quantity = 2.345m }] };
+        Assert.Equal(new InventoryMovement(12, -2.345m, InventoryTransactionType.SalesIssue,
+            SourceDocumentType.SalesOrder, 7, 21), Assert.Single(SalesOrderRules.ConfirmationMovements(order)));
+    }
+
+    [Theory]
+    [InlineData(DocumentStatus.Cancelled, true)]
+    [InlineData(DocumentStatus.Confirmed, true)]
+    [InlineData(DocumentStatus.Draft, false)]
+    public void TerminalOrEmptyOrdersCannotPost(DocumentStatus status, bool hasLine)
+    {
+        var order = new SalesOrder { Status = status };
+        if (hasLine) order.Lines.Add(new() { Id = 2, ItemId = 3, Quantity = 1 });
+        Assert.Equal(409, Assert.Throws<ApiException>(() => SalesOrderRules.ConfirmationMovements(order)).StatusCode);
+    }
+
+    [Fact]
     public void SalesSqlProfileRequiresItsOwnOptInAndDatabase()
     {
         var settings = new Dictionary<string,string> {
@@ -25,6 +44,14 @@ public sealed class SalesOrderRulesTests
         };
         string Read() => BttMiniERP.Tests.Fixtures.MasterDataSqlFixture.ReadSettings(key => settings.GetValueOrDefault(key), "Sales");
         Assert.Contains("BttMiniERP_SalesTest", Read());
+        settings["BTT_RUN_SALES_CONFIRM_SQL_TESTS"] = "1";
+        Assert.Throws<InvalidOperationException>(() => Read());
+        var originalConnection = settings["BTT_SQL_TEST_CONNECTION_STRING"];
+        settings["BTT_SQL_TEST_CONNECTION_STRING"] = originalConnection.Replace("SalesTest", "SalesConfirmTest");
+        Assert.Contains("BttMiniERP_SalesConfirmTest", Read());
+        settings.Remove("BTT_RUN_SALES_CONFIRM_SQL_TESTS");
+        Assert.Throws<InvalidOperationException>(() => Read());
+        settings["BTT_SQL_TEST_CONNECTION_STRING"] = originalConnection;
         settings["BTT_RUN_SALES_SQL_TESTS"] = "0";
         Assert.Throws<InvalidOperationException>(() => Read());
         settings["BTT_RUN_SALES_SQL_TESTS"] = "1";
@@ -109,7 +136,7 @@ public sealed class SalesOrderRulesTests
     public async Task InvalidServiceInputDoesNotConnectOrTrackWrites()
     {
         using var db = new ApplicationDbContextFactory().CreateDbContext(["--offline"]);
-        var service = new SalesOrderService(db, null!, TimeProvider.System);
+        var service = new SalesOrderService(db, null!, TimeProvider.System, null!);
         await Assert.ThrowsAsync<ApiException>(() => service.CreateAsync(new() { CustomerId = 0 }, default));
         await Assert.ThrowsAsync<ApiException>(() => service.ListAsync(new() { PageSize = 101 }, default));
         await Assert.ThrowsAsync<ApiException>(() => service.UpdateAsync(1, new() { CustomerId = 1, RowVersion = "bad" }, default));
