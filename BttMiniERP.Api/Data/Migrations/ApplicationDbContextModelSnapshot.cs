@@ -88,6 +88,102 @@ namespace BttMiniERP.Api.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("BttMiniERP.Api.Entities.BillOfMaterial", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("FinishedProductId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("FinishedProductId")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.ToTable("BillOfMaterials", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BillOfMaterials_Version", "[Version] >= 1");
+                        });
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.BillOfMaterialDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BillOfMaterialId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("QuantityPerUnit")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("RawMaterialId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RawMaterialId");
+
+                    b.HasIndex("BillOfMaterialId", "RawMaterialId")
+                        .IsUnique();
+
+                    b.ToTable("BillOfMaterialDetails", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_BillOfMaterialDetails_QuantityPerUnit", "[QuantityPerUnit] > 0");
+                        });
+                });
+
             modelBuilder.Entity("BttMiniERP.Api.Entities.Category", b =>
                 {
                     b.Property<int>("Id")
@@ -756,6 +852,41 @@ namespace BttMiniERP.Api.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("BttMiniERP.Api.Entities.BillOfMaterial", b =>
+                {
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("FinishedProductId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.BillOfMaterialDetail", b =>
+                {
+                    b.HasOne("BttMiniERP.Api.Entities.BillOfMaterial", null)
+                        .WithMany("Details")
+                        .HasForeignKey("BillOfMaterialId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("RawMaterialId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BttMiniERP.Api.Entities.Category", b =>
                 {
                     b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
@@ -949,6 +1080,11 @@ namespace BttMiniERP.Api.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.BillOfMaterial", b =>
+                {
+                    b.Navigation("Details");
                 });
 
             modelBuilder.Entity("BttMiniERP.Api.Entities.PurchaseReceipt", b =>

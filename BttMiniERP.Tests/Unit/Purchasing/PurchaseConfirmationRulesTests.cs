@@ -56,7 +56,7 @@ public sealed class PurchaseConfirmationRulesTests
     {
         using var db = new ApplicationDbContextFactory().CreateDbContext(["--offline"]);
         var assembly = db.GetService<IMigrationsAssembly>();
-        var migration = assembly.CreateMigration(assembly.Migrations.Last().Value, db.Database.ProviderName!);
+        var migration = assembly.CreateMigration(assembly.Migrations.Single(x => x.Key.EndsWith("_AddPurchaseConfirmationAudit", StringComparison.Ordinal)).Value, db.Database.ProviderName!);
         var columns = migration.UpOperations.OfType<AddColumnOperation>().ToArray();
         Assert.Equal(new[] { "ConfirmedAt", "ConfirmedByUserId" }, columns.Select(x => x.Name).Order());
         Assert.All(columns, x => { Assert.Equal("PurchaseReceipts", x.Table); Assert.True(x.IsNullable); });

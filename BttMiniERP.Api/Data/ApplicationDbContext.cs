@@ -8,6 +8,8 @@ namespace BttMiniERP.Api.Data;
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
+    public DbSet<BillOfMaterial> BillOfMaterials => Set<BillOfMaterial>();
+    public DbSet<BillOfMaterialDetail> BillOfMaterialDetails => Set<BillOfMaterialDetail>();
     public DbSet<PurchaseReceipt> PurchaseReceipts => Set<PurchaseReceipt>();
     public DbSet<PurchaseReceiptLine> PurchaseReceiptLines => Set<PurchaseReceiptLine>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();

@@ -33,6 +33,7 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     public const string MigrationDatabaseName = "BttMiniERP_InventoryMigrationTest";
     public const string PurchasingDatabaseName = "BttMiniERP_PurchasingTest";
     public const string ConfirmationDatabaseName = "BttMiniERP_PurchaseConfirmationTest";
+    public const string BomDatabaseName = "BttMiniERP_BomTest";
     private readonly string profile;
     private readonly string databaseName;
     private readonly string connection;
@@ -44,12 +45,12 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     public string ActorId { get; } = "p21-" + Guid.NewGuid().ToString("N");
     internal string Connection => connection;
     private MasterDataSqlFixture(string connection, string profile) { this.connection = connection; this.profile = profile; databaseName = Target(profile); }
-    private static string Target(string profile) => profile switch { "MasterData" => DatabaseName, "Inventory" => InventoryDatabaseName, "InventoryMigration" => MigrationDatabaseName, "Purchasing" => PurchasingDatabaseName, "Confirmation" => ConfirmationDatabaseName, _ => throw new InvalidOperationException("Profile không hợp lệ.") };
+    private static string Target(string profile) => profile switch { "MasterData" => DatabaseName, "Inventory" => InventoryDatabaseName, "InventoryMigration" => MigrationDatabaseName, "Purchasing" => PurchasingDatabaseName, "Confirmation" => ConfirmationDatabaseName, "Bom" => BomDatabaseName, _ => throw new InvalidOperationException("Profile không hợp lệ.") };
 
     public static string ReadSettings(Func<string, string?> read, string profile = "MasterData")
     {
         var target = Target(profile);
-        var flag = profile switch { "MasterData" => "MASTERDATA", "Inventory" => "INVENTORY", "Purchasing" => "PURCHASING", "Confirmation" => "CONFIRMATION", _ => "INVENTORY_MIGRATION" };
+        var flag = profile switch { "MasterData" => "MASTERDATA", "Inventory" => "INVENTORY", "Purchasing" => "PURCHASING", "Confirmation" => "CONFIRMATION", "Bom" => "BOM", _ => "INVENTORY_MIGRATION" };
         var operations = profile == "InventoryMigration" ? "Verify,MigrationUpRollback,TemporaryWrites,CleanupOwnedRecords" : "Verify,TemporaryWrites,Concurrency,CleanupOwnedRecords";
         if (read("BTT_RUN_SQL_TESTS") != "1" || read($"BTT_RUN_{flag}_SQL_TESTS") != "1"
             || read("BTT_SQL_TEST_PROFILE") != profile || read("BTT_SQL_TEST_ENVIRONMENT") != "Testing"
@@ -74,6 +75,7 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     public CategoryService Categories(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public ItemService Items(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public InventoryService Inventory(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
+    public BillOfMaterialService Boms(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public SupplierService Suppliers(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public PurchaseReceiptService Receipts(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System, Inventory(db));
     private CurrentUser Actor() => new(new HttpContextAccessor { HttpContext = new DefaultHttpContext
@@ -96,7 +98,7 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
             await db.Database.ExecuteSqlRawAsync("DECLARE @r int; EXEC @r=sys.sp_getapplock @Resource=N'BttMiniERP.P21.Tests', @LockMode=N'Exclusive', @LockOwner=N'Session', @LockTimeout=0; IF @r<0 THROW 51021, 'P2.1 test session already active', 1;");
             fixture.ownsSessionLock = true;
             var migrations = db.Database.GetMigrations().ToArray();
-            Assert.EndsWith("_AddPurchaseConfirmationAudit", migrations[^1]);
+            Assert.EndsWith("_AddBillOfMaterials", migrations[^1]);
             var baseline = profile == "InventoryMigration" ? migrations.TakeWhile(x => !x.EndsWith("_AddInventoryLedger", StringComparison.Ordinal)).ToArray() : migrations;
             Assert.Equal(baseline, await db.Database.GetAppliedMigrationsAsync());
             if (profile == "InventoryMigration")
@@ -113,6 +115,8 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
                 Assert.False(await db.InventoryTransactions.AnyAsync());
                 Assert.False(await db.PurchaseReceipts.AnyAsync());
                 Assert.False(await db.PurchaseReceiptLines.AnyAsync());
+                Assert.False(await db.BillOfMaterials.AnyAsync());
+                Assert.False(await db.BillOfMaterialDetails.AnyAsync());
             }
             else
                 Assert.Empty(await IdentityDatabaseVerifier.ReadRowsAsync(db,
@@ -138,6 +142,13 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
                 var categories = ownership.Categories.Keys.ToArray();
                 var suppliers = ownership.Suppliers.Keys.ToArray();
                 var receipts = ownership.Receipts.Keys.ToArray();
+                if (profile == "Bom")
+                {
+                    var boms = ownership.Boms.Keys.ToArray();
+                    var ownedBoms = db.BillOfMaterials.Where(x => boms.Contains(x.Id) && x.CreatedByUserId == ActorId).Select(x => x.Id);
+                    await db.BillOfMaterialDetails.Where(x => ownedBoms.Contains(x.BillOfMaterialId)).ExecuteDeleteAsync();
+                    await db.BillOfMaterials.Where(x => boms.Contains(x.Id) && x.CreatedByUserId == ActorId).ExecuteDeleteAsync();
+                }
                 if (profile is "Purchasing" or "Confirmation")
                 {
                     var owned = db.PurchaseReceipts.Where(x => receipts.Contains(x.Id) && x.CreatedByUserId == ActorId).Select(x => x.Id);
@@ -158,6 +169,7 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
                 Assert.False(await db.Items.AnyAsync(x => x.CreatedByUserId == ActorId));
                 Assert.False(await db.Categories.AnyAsync(x => x.CreatedByUserId == ActorId));
                 Assert.False(await db.Users.AnyAsync(x => x.Id == ActorId));
+                if (profile == "Bom") Assert.False(await db.BillOfMaterials.AnyAsync(x => x.CreatedByUserId == ActorId));
             }
         }
         finally
@@ -170,7 +182,7 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
                     {
                         await guard.Database.ExecuteSqlRawAsync("EXEC sys.sp_releaseapplock @Resource=N'BttMiniERP.P21.Tests', @LockOwner=N'Session';");
                         ownsSessionLock = false;
-                        if (mayCleanup && profile is "Inventory" or "InventoryMigration" or "Purchasing" or "Confirmation")
+                        if (mayCleanup && profile is "Inventory" or "InventoryMigration" or "Purchasing" or "Confirmation" or "Bom")
                         {
                             Assert.Equal(0, await guard.Database.SqlQueryRaw<int>("SELECT @@TRANCOUNT AS [Value]").SingleAsync());
                             // SQL Server có transaction nền (đã quan sát session 2, is_user_process=0).
@@ -193,12 +205,14 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
         public ConcurrentDictionary<int, bool> Items { get; } = new();
         public ConcurrentDictionary<int, bool> Suppliers { get; } = new();
         public ConcurrentDictionary<int, bool> Receipts { get; } = new();
+        public ConcurrentDictionary<int, bool> Boms { get; } = new();
         public override ValueTask<int> SavedChangesAsync(SaveChangesCompletedEventData data, int result, CancellationToken cancellationToken = default)
         {
             foreach (var entry in data.Context!.ChangeTracker.Entries<Category>().Where(x => x.Entity.Id > 0)) Categories.TryAdd(entry.Entity.Id, true);
             foreach (var entry in data.Context.ChangeTracker.Entries<Item>().Where(x => x.Entity.Id > 0)) Items.TryAdd(entry.Entity.Id, true);
             foreach (var entry in data.Context.ChangeTracker.Entries<Supplier>().Where(x => x.Entity.Id > 0)) Suppliers.TryAdd(entry.Entity.Id, true);
             foreach (var entry in data.Context.ChangeTracker.Entries<PurchaseReceipt>().Where(x => x.Entity.Id > 0)) Receipts.TryAdd(entry.Entity.Id, true);
+            foreach (var entry in data.Context.ChangeTracker.Entries<BillOfMaterial>().Where(x => x.Entity.Id > 0)) Boms.TryAdd(entry.Entity.Id, true);
             return ValueTask.FromResult(result);
         }
     }

@@ -2,6 +2,8 @@ namespace BttMiniERP.Api.Common.Authorization;
 
 public static class AppRoles
 {
+    public const string ReadBillOfMaterials = "ReadBillOfMaterials";
+    public const string ManageBillOfMaterials = "ManageBillOfMaterials";
     public const string ReadPurchaseReceipts = "ReadPurchaseReceipts";
     public const string ManagePurchaseReceipts = "ManagePurchaseReceipts";
     public const string ConfirmPurchaseReceipts = "ConfirmPurchaseReceipts";
