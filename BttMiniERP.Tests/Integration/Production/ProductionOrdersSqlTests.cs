@@ -258,7 +258,7 @@ public sealed partial class ProductionOrdersSqlTests
         await verify.Database.OpenConnectionAsync();
         var fks=await IdentityDatabaseVerifier.ReadRowsAsync(verify,"SELECT delete_referential_action_desc FROM sys.foreign_keys WHERE parent_object_id IN (OBJECT_ID('ProductionOrders'),OBJECT_ID('ProductionOrderMaterials'))");
         Assert.Equal(8,fks.Count); Assert.All(fks,x=>Assert.Equal("NO_ACTION",x));
-        Assert.Equal(9,(await verify.Database.GetAppliedMigrationsAsync()).Count()); Assert.Empty(await verify.Database.GetPendingMigrationsAsync());
+        Assert.Equal(10,(await verify.Database.GetAppliedMigrationsAsync()).Count()); Assert.Empty(await verify.Database.GetPendingMigrationsAsync());
     }
 
     private sealed class InvalidMaterialBeforeSave : SaveChangesInterceptor

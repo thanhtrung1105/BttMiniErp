@@ -1,5 +1,17 @@
 # Thiết kế cơ sở dữ liệu dự kiến
 
+## P5.1 — SalesOrders và SalesOrderLines
+
+Migration thứ 10 `20261118194736_AddSalesOrders` nối tiếp AddProductionOrders. Header có OrderNumber unique, CustomerId, OrderDate UTC, Status, Note, TotalAmount decimal(18,2), audit tạo/sửa/hủy và RowVersion. Audit xác nhận để null ở P5.1. Line có Quantity decimal(18,3), UnitPrice/LineTotal decimal(18,2). Unique (SalesOrderId, ItemId) và (SalesOrderId, LineNumber). Sáu CHECK bảo vệ status, tổng không âm, số dòng dương, lượng dương, giá và thành tiền không âm. Bảy FK đều NO ACTION. Điều kiện đơn không rỗng và thành phẩm active do service kiểm tra trong giao dịch. [Script Up](../BttMiniERP.Api/Data/Scripts/AddSalesOrders.sql).
+
+```mermaid
+erDiagram
+    Customers ||--o{ SalesOrders : mua
+    SalesOrders ||--|{ SalesOrderLines : gom
+    Items ||--o{ SalesOrderLines : thanh_pham
+    AspNetUsers ||--o{ SalesOrders : audit
+```
+
 > Phase 0 chưa tạo database, migration hoặc bảng nào. Mọi thay đổi SQL Server cần phê duyệt trước.
 
 ## ERD logic

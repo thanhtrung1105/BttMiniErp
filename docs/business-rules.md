@@ -1,5 +1,21 @@
 # Luật nghiệp vụ dự kiến
 
+## P5.1 — Đơn bán Draft
+
+Khách hàng và từng thành phẩm phải đang hoạt động lúc tạo/sửa. Mỗi Item xuất hiện một lần. Số lượng dương có tối đa ba chữ số thập phân, đơn giá không âm có tối đa hai chữ số thập phân. Từng dòng được làm tròn AwayFromZero tới hai chữ số rồi mới cộng vào tổng. Từ chối vượt scale/precision hoặc tràn tổng. Mã SO-GUID, thứ tự dòng, số tiền và audit do server ghi. Mọi thao tác P5.1 giữ nguyên balance và ledger, kể cả khi tồn hiện tại bằng 0.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft : tạo với ít nhất một dòng
+    Draft --> Draft : sửa với rowVersion hiện tại
+    Draft --> Cancelled : hủy với rowVersion hiện tại
+    note right of Draft
+        Confirmed thuộc P5.2, chưa có API trong P5.1
+    end note
+```
+
+Cancel giữ nguyên dòng và tổng tiền. Không sửa/hủy lại đơn đã kết thúc. Item đã được dòng bán tham chiếu được bảo vệ khi đổi loại hoặc đơn vị.
+
 > Chưa có mã triển khai ở Phase 0. Tên entity và use case trong tài liệu là mục tiêu triển khai, không phải file/class/method hiện hữu.
 
 ## Trạng thái chứng từ

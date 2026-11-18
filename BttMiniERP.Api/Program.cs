@@ -13,6 +13,7 @@ builder.Services.AddScoped<BttMiniERP.Api.Services.ItemService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.InventoryService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.BillOfMaterialService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.ProductionOrderService>();
+builder.Services.AddScoped<BttMiniERP.Api.Services.SalesOrderService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.PurchaseReceiptService>();
 BttMiniERP.Api.Common.Authorization.SecurityRegistration.AddApplicationSecurity(builder.Services, builder.Configuration);
 

@@ -1,5 +1,25 @@
 # Kế hoạch API dự kiến
 
+## P5.1 — Soạn đơn bán thành phẩm
+
+Mọi route dùng JWT. Admin, Manager, SalesStaff đọc và ghi. WarehouseStaff chỉ đọc. PurchasingStaff, ProductionStaff và Viewer không có quyền. Thiếu JWT trả 401, thiếu quyền trả 403.
+
+| Method | Route | Request và kết quả |
+|---|---|---|
+| GET | `/api/v1/sales-orders` | Lọc customerId, status, from (bao gồm), to (loại trừ) theo OrderDate UTC. Page từ 1, pageSize 1–100, sortBy orderDate/id, sortDirection asc/desc. Mặc định 20 dòng, orderDate giảm dần rồi Id giảm dần. Trả 200, items/page/pageSize/totalCount. |
+| POST | `/api/v1/sales-orders` | CustomerId và lines bắt buộc; orderDate và note tùy chọn. Trả 201, Location và chi tiết Draft. |
+| GET | `/api/v1/sales-orders/{id}` | Trả 200 kèm các dòng theo LineNumber. |
+| PUT | `/api/v1/sales-orders/{id}` | Thay toàn bộ nội dung Draft, gửi rowVersion trong body. Trả 200 cùng phiên bản mới. |
+| POST | `/api/v1/sales-orders/{id}/cancel` | Chỉ nhận rowVersion. Trả 200 cùng chi tiết Cancelled. |
+
+Ví dụ body tạo đơn (dùng ID khách hàng và thành phẩm thực tế):
+
+```json
+{"customerId":1,"lines":[{"itemId":2,"quantity":0.125,"unitPrice":0.20}]}
+```
+
+Server tính lineTotal = 0.03. Trường ngoài DTO, dòng rỗng/trùng, precision sai, RowVersion sai định dạng trả 400 ProblemDetails. Customer/Item/đơn không tồn tại trả 404. Tham chiếu inactive/sai loại, trùng mã server, trạng thái hoặc phiên bản xung đột trả 409. Không có DELETE hoặc confirm trong P5.1.
+
 Base path dự kiến: `/api/v1`. Tất cả body/response là JSON, lỗi dùng RFC 7807 ProblemDetails. Các endpoint nghiệp vụ cần JWT Bearer trừ đăng nhập/refresh (nếu refresh token được phê duyệt khi triển khai).
 
 | Nhóm | Endpoint dự kiến | Mục đích | Role tối thiểu |

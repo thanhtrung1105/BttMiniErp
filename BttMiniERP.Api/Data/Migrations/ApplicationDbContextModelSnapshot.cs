@@ -778,6 +778,149 @@ namespace BttMiniERP.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("BttMiniERP.Api.Entities.SalesOrder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CancelledByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ConfirmedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTimeOffset>("OrderDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTimeOffset?>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("UpdatedByUserId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CancelledByUserId");
+
+                    b.HasIndex("ConfirmedByUserId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("OrderNumber")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByUserId");
+
+                    b.HasIndex("OrderDate", "Id");
+
+                    b.HasIndex("Status", "OrderDate", "Id");
+
+                    b.ToTable("SalesOrders", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SalesOrders_Status", "[Status] IN (0,1,2)");
+
+                            t.HasCheckConstraint("CK_SalesOrders_Total", "[TotalAmount] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.SalesOrderLine", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LineNumber")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("SalesOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("SalesOrderId", "ItemId")
+                        .IsUnique();
+
+                    b.HasIndex("SalesOrderId", "LineNumber")
+                        .IsUnique();
+
+                    b.ToTable("SalesOrderLines", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_SalesOrderLines_LineNumber", "[LineNumber] > 0");
+
+                            t.HasCheckConstraint("CK_SalesOrderLines_LineTotal", "[LineTotal] >= 0");
+
+                            t.HasCheckConstraint("CK_SalesOrderLines_Quantity", "[Quantity] > 0");
+
+                            t.HasCheckConstraint("CK_SalesOrderLines_UnitPrice", "[UnitPrice] >= 0");
+                        });
+                });
+
             modelBuilder.Entity("BttMiniERP.Api.Entities.Supplier", b =>
                 {
                     b.Property<int>("Id")
@@ -1210,6 +1353,51 @@ namespace BttMiniERP.Api.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("BttMiniERP.Api.Entities.SalesOrder", b =>
+                {
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CancelledByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ConfirmedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.SalesOrderLine", b =>
+                {
+                    b.HasOne("BttMiniERP.Api.Entities.Item", null)
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("BttMiniERP.Api.Entities.SalesOrder", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("SalesOrderId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("BttMiniERP.Api.Entities.Supplier", b =>
                 {
                     b.HasOne("BttMiniERP.Api.Entities.ApplicationUser", null)
@@ -1286,6 +1474,11 @@ namespace BttMiniERP.Api.Data.Migrations
                 });
 
             modelBuilder.Entity("BttMiniERP.Api.Entities.PurchaseReceipt", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("BttMiniERP.Api.Entities.SalesOrder", b =>
                 {
                     b.Navigation("Lines");
                 });
