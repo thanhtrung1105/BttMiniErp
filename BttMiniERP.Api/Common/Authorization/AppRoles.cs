@@ -9,6 +9,8 @@ public static class AppRoles
     public const string ManageBillOfMaterials = "ManageBillOfMaterials";
     public const string ReadSalesOrders = "ReadSalesOrders";
     public const string ReadInventory = "ReadInventory";
+    public const string ReadReports = "ReadReports";
+    public const string ReadInventoryReport = "ReadInventoryReport";
     public const string ConfirmSalesOrders = "ConfirmSalesOrders";
     public const string ManageSalesOrders = "ManageSalesOrders";
     public const string ReadPurchaseReceipts = "ReadPurchaseReceipts";

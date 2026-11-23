@@ -88,7 +88,12 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     public CategoryService Categories(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public ItemService Items(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public InventoryService Inventory(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
-    public SalesOrderService Sales(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System, Inventory(db));
+    public SalesOrderService Sales(ApplicationDbContext db, TimeProvider? time = null)
+    {
+        var actor = Actor();
+        var clock = time ?? TimeProvider.System;
+        return new(db, actor, clock, new InventoryService(db, actor, clock));
+    }
     public CustomerService Customers(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public ProductionOrderService Production(ApplicationDbContext db, TimeProvider? time = null)
     {
@@ -98,7 +103,12 @@ public sealed class MasterDataSqlFixture : IAsyncDisposable
     }
     public BillOfMaterialService Boms(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
     public SupplierService Suppliers(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System);
-    public PurchaseReceiptService Receipts(ApplicationDbContext db) => new(db, Actor(), TimeProvider.System, Inventory(db));
+    public PurchaseReceiptService Receipts(ApplicationDbContext db, TimeProvider? time = null)
+    {
+        var actor = Actor();
+        var clock = time ?? TimeProvider.System;
+        return new(db, actor, clock, new InventoryService(db, actor, clock));
+    }
     private CurrentUser Actor() => new(new HttpContextAccessor { HttpContext = new DefaultHttpContext
         { User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("sub", ActorId)], "Test")) } });
 
