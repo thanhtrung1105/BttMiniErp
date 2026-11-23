@@ -1,5 +1,16 @@
 # Kế hoạch API dự kiến
 
+## P6.1 — Tra cứu kho
+
+Cả bảy role đã duyệt được GET. Thiếu JWT trả 401, tài khoản không có role hợp lệ trả 403. Query không hợp lệ trả 400 ProblemDetails. Kết quả 200 gồm `items`, `page`, `pageSize`, `totalCount` (sau lọc, trước phân trang); trang ngoài phạm vi có danh sách rỗng. Mặc định trang 1, 20 dòng; page tối đa 1.000.000, pageSize tối đa 100.
+
+| Endpoint | Lọc và sắp xếp | Dữ liệu |
+|---|---|---|
+| GET `/api/v1/inventory/balances` | `itemId`, `itemType`, `search` theo mã hoặc tên; `sortBy=itemId\|code`, mặc định itemId tăng | ItemId, mã, tên, loại, đơn vị, quantityOnHand; gồm mặt hàng có số dư bằng 0 hoặc đã vô hiệu |
+| GET `/api/v1/inventory/transactions` | `itemId`, `itemType`, `transactionType`, `sourceDocumentType`, `sourceDocumentId`, `from`, `to`; `sortBy=occurredAt\|id`, mặc định occurredAt giảm rồi id giảm | Thông tin mặt hàng, lượng biến động có dấu, tồn sau ghi, thời điểm, ID người ghi, loại/ID chứng từ, ID dòng nguồn và sourceDocumentUrl |
+
+Hai API nhận `sortDirection=asc|desc`. Khoảng ngày trên lịch sử so theo thời điểm UTC, lấy từ `from` đến trước `to`, cho phép thiếu một đầu. Ví dụ `GET /api/v1/inventory/transactions?sourceDocumentType=SalesOrder&sourceDocumentId=12`. Link nguồn dùng quyền của API chứng từ tương ứng. [Cách đối chiếu kho](development-guide.md).
+
 ## P5.2 — Xác nhận đơn bán
 
 `POST /api/v1/sales-orders/{id}/confirm` chỉ nhận `{"rowVersion":"…"}` từ lần đọc chi tiết. Admin, Manager, SalesStaff và WarehouseStaff được xác nhận. Thành công trả 200 với chi tiết đơn Confirmed, phiên bản mới và audit. Body hoặc phiên bản sai định dạng trả 400, thiếu JWT 401, thiếu quyền 403, không tìm thấy đơn 404. Phiên bản cũ, đơn đã kết thúc, đơn rỗng, khách hàng hoặc thành phẩm ngừng hoạt động và thiếu tồn trả 409 ProblemDetails. [Luồng xử lý](features/sales.md).

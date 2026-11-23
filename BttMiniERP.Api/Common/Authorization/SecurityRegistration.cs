@@ -74,6 +74,7 @@ public static class SecurityRegistration
             options.AddPolicy(AppRoles.ReadCustomers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "SalesStaff", "WarehouseStaff", "Viewer"));
             options.AddPolicy(AppRoles.ManageCustomers, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager", "SalesStaff"));
             options.AddPolicy(AppRoles.ReadMasterData, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.All));
+            options.AddPolicy(AppRoles.ReadInventory, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.All));
             options.AddPolicy(AppRoles.ManageMasterData, policy => policy.RequireAuthenticatedUser().RequireRole(AppRoles.Admin, "Manager"));
         });
         services.AddRateLimiter(options =>

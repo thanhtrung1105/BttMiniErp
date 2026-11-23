@@ -11,6 +11,7 @@ builder.Services.AddScoped<BttMiniERP.Api.Services.SupplierService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.CustomerService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.ItemService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.InventoryService>();
+builder.Services.AddScoped<BttMiniERP.Api.Services.InventoryQueryService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.BillOfMaterialService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.ProductionOrderService>();
 builder.Services.AddScoped<BttMiniERP.Api.Services.SalesOrderService>();
